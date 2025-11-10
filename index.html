@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prosthodontics Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+        20%, 40%, 60%, 80% { transform: translateX(10px); }
+      }
+      .animate-shake {
+        animation: shake 0.5s ease-in-out;
+      }
+      @keyframes confetti-fall {
+        0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+      }
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        top: 0;
+        opacity: 0;
+        animation: confetti-fall 3s linear forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-900 text-white">
+    <div id="root"></div>
+    <footer class="text-center text-slate-500 py-4 text-sm absolute bottom-0 w-full">
+        Designed by The Boss
+    </footer>
+    <script type="module">
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ReactDOM from 'react-dom/client';
+
+// --- Data from constants.ts ---
+const DENTISTRY_QUIZ = {
+  quizId: "dentistry_quiz_01",
+  title: "Fixed Prosthodontics Quiz",
+  timeLimitSeconds: 3600, // 60 minutes for 60 questions
+  questions: [
+    { id: 1, text: "What is the specialized area of dentistry concerned with the replacement and restoration of teeth by artificial substitutes that are not readily removable from the mouth?", options: ["Endodontics", "Orthodontics", "Fixed Prosthodontics", "Periodontics"], correctIndex: 2 },
+    { id: 2, text: "Which of the following is an indication for fixed prosthodontics?", options: ["The patient has poor oral hygiene habits.", "Suitable abutment teeth are present.", "The patient is in poor health.", "Supportive tissues are diseased."], correctIndex: 1 },
+    { id: 3, text: "What is an artificial replacement that restores missing tooth structure by surrounding most or all of the remaining structure?", options: ["Filling", "Crown", "Pontic", "Inlay"], correctIndex: 1 },
+    { id: 4, text: "What is the name for the part of a bridge that acts as the actual substitute for the lost tooth?", options: ["Retainer", "Abutment", "Connector", "Pontic"], correctIndex: 3 },
+    { id: 5, text: "What is the natural tooth that supports and retains a bridge called?", options: ["Pontic", "Retainer", "Abutment Tooth", "Connector"], correctIndex: 2 },
+    { id: 6, text: "Which crown is mainly used in posterior teeth and is a full coverage all-metallic restoration?", options: ["Jacket Crown", "Full Metal Crown", "Veneered Metal Crown", "Post Crown"], correctIndex: 1 },
+    { id: 7, text: "A Jacket Crown is a non-metallic restoration used mainly for:", options: ["Strength", "Esthetics", "Durability in posterior teeth", "Temporary use"], correctIndex: 1 },
+    { id: 8, text: "What part of the bridge unites the pontic with the retainer?", options: ["Abutment", "Connector Joint", "Dummy", "Pier"], correctIndex: 1 },
+    { id: 9, text: "Which of the following is a contraindication for fixed prosthodontics?", options: ["Healthy supportive tissues", "One or two missing adjacent teeth", "The patient cannot afford the treatment.", "The patient is motivated to have the prosthesis."], correctIndex: 2 },
+    { id: 10, text: "A temporary crown is used for:", options: ["Permanent restoration", "Protection of the prepared tooth until the final crown is ready.", "Improving esthetics permanently", "Strengthening the tooth root"], correctIndex: 1 },
+    { id: 11, text: "What is another term for a bridge?", options: ["Fixed Partial Denture", "Removable Partial Denture", "Full Denture", "Implant"], correctIndex: 0 },
+    { id: 12, text: "A Pontic is also known as a:", options: ["Retainer", "Dummy", "Abutment", "Connector"], correctIndex: 1 },
+    { id: 13, text: "What is the part of a fixed partial denture that rebuilds the prepared abutment tooth?", options: ["Pontic", "Connector", "Retainer", "Edentulous Ridge"], correctIndex: 2 },
+    { id: 14, text: "According to the text, which of the following is NOT an advantage of a fixed bridge?", options: ["Acts as a space maintainer", "Restores function and aesthetics", "Can be removed by the patient for cleaning", "Maintains periodontal health of the abutment"], correctIndex: 2 },
+    { id: 15, text: "A patient with a dry mouth (xerostomia) is a contraindication for a bridge due to:", options: ["High risk of recurrent caries", "Unstable bone support", "Limited inter-jaw space", "Poor aesthetics"], correctIndex: 0 },
+    { id: 16, text: "How is a resin-bonded bridge primarily retained?", options: ["By grooves and pinholes", "By full coverage of the tooth", "By a post in the root canal", "By adhesion between the tooth surface and resin cement"], correctIndex: 3 },
+    { id: 17, text: "The clinical crown is defined as:", options: ["The part of the tooth extending from the cemento-enamel junction to the occlusal surface.", "The part of the natural tooth which appears in the oral cavity.", "The artificial substitute for the tooth.", "Always shorter than the anatomic crown."], correctIndex: 1 },
+    { id: 18, text: "A crown that covers all the coronal portion of the tooth is called a:", options: ["Partial Crown", "3/4 Crown", "Complete Crown", "Laminate"], correctIndex: 2 },
+    { id: 19, text: "Bridges can be classified according to their location into Anterior, Posterior, and:", options: ["Simple", "Compound", "Unilateral", "Complex"], correctIndex: 3 },
+    { id: 20, text: "A bridge where the pontic is fixed to a retainer at one end only is called a:", options: ["Fixed-Fixed Bridge", "Removable Bridge", "Cantilever Bridge", "Spring Cantilever Bridge"], correctIndex: 2 },
+    { id: 21, text: "A full cast metal crown that has a porcelain facing on the labial or buccal surface is a:", options: ["Full Metal Crown", "Jacket Crown", "Veneered Metal Crown", "Full Veneered Metal Crown"], correctIndex: 2 },
+    { id: 22, text: "Which crown gains its retention by a post inserted in the prepared root canal?", options: ["Jacket Crown", "Full Metal Crown", "Post Crown", "Three-Quarter Crown"], correctIndex: 2 },
+    { id: 23, text: "A Three-Quarter Crown restores the occlusal/incisal surface and three of the four axial surfaces but does NOT include the:", options: ["Mesial surface", "Distal surface", "Lingual surface", "Facial surface"], correctIndex: 3 },
+    { id: 24, text: "An isolated tooth where the adjacent anterior and posterior teeth are missing is known as a:", options: ["Terminal Abutment", "Pier Abutment", "Secondary Abutment", "Pontic Abutment"], correctIndex: 1 },
+    { id: 25, text: "A bridge where the components are all soldered together and cemented at both ends is called a:", options: ["Fixed-Movable Bridge", "Cantilever Bridge", "Fixed-Fixed Bridge", "Removable Bridge"], correctIndex: 2 },
+    { id: 26, text: "Laminates are veneer restorations that restore which surface of a tooth for esthetic purposes?", options: ["Occlusal", "Lingual", "Facial", "Proximal"], correctIndex: 2 },
+    { id: 27, text: "What type of retainer is a classic intracoronal restoration that restores proximal and occlusal surfaces but does not cover the cusps?", options: ["Onlay Retainer", "Inlay Retainer", "Three-Quarter Crown", "Pinledge Retainer"], correctIndex: 1 },
+    { id: 28, text: "Which type of bridge is connected to one of the terminal abutments by a non-rigid connector?", options: ["Fixed-Fixed Bridge", "Cantilever Bridge", "Fixed-Supported Bridge (Fixed-Movable)", "Spring Cantilever Bridge"], correctIndex: 2 },
+    { id: 29, text: "A Reverse Three-Quarter Crown is typically used with lower premolars and restores all surfaces EXCEPT the:", options: ["Buccal surface", "Mesial surface", "Distal surface", "Lingual/palatal surface"], correctIndex: 3 },
+    { id: 30, text: "A Pinledge Retainer is a modification of an anterior three-quarter crown that obtains primary retention from:", options: ["The facial surface", "Long parallel pins in the lingual/palatal surfaces", "Cusp overlays", "Adhesion to enamel"], correctIndex: 1 },
+    { id: 31, text: "A bridge constructed before the extraction of a tooth and seated immediately after is an:", options: ["Temporary Bridge", "Immediate Bridge", "Maryland Bridge", "Spring Cantilever Bridge"], correctIndex: 1 },
+    { id: 32, text: "The \"Maryland bridge\" is another name for a:", options: ["Cantilever bridge", "Resin-bonded bridge", "Fixed-fixed bridge", "Temporary bridge"], correctIndex: 1 },
+    { id: 33, text: "In old age, due to gingival recession, the clinical crown is often:", options: ["Shorter than the anatomic crown", "Longer than the anatomic crown", "The same size as the anatomic crown", "Missing"], correctIndex: 1 },
+    { id: 34, text: "A Seven-Eighths Crown is an extension of the three-quarter crown that leaves which part of a maxillary molar uncovered?", options: ["Mesio-lingual cusp", "Disto-buccal cusp", "Mesio-buccal cusp", "Disto-lingual cusp"], correctIndex: 2 },
+    { id: 35, text: "A \"Broken Stress Bridge\" is another term for which type of bridge?", options: ["Cantilever Bridge", "Spring Cantilever Bridge", "Fixed-Supported Bridge (Fixed-Movable)", "Fixed-Fixed Bridge"], correctIndex: 2 },
+    { id: 36, text: "An Onlay Retainer is a modification of an inlay that is characterized by:", options: ["Not covering any cusps", "Using pins for retention", "Cusp overlays to protect the tooth structure", "Leaving the facial surface intact"], correctIndex: 2 },
+    { id: 37, text: "A bridge that involves both anterior and posterior segments, crossing the canine line, is classified as:", options: ["Anterior bridge", "Posterior bridge", "Unilateral bridge", "Complex bridge"], correctIndex: 3 },
+    { id: 38, text: "Which of the following is listed as a potential disadvantage of a fixed bridge?", options: ["Increased risk of over-eruption of the opposing tooth", "Secondary caries attacking the abutment due to an open margin", "It does not act as a space maintainer", "It cannot restore fractured teeth"], correctIndex: 1 },
+    { id: 39, text: "PFM is an abbreviation for a crown made of a combination of:", options: ["Plastic and Full Metal", "Porcelain and Fixed Metal", "Porcelain Fused to Metal", "Partial Fused to Metal"], correctIndex: 2 },
+    { id: 40, text: "A Removable Bridge is characterized by a retainer consisting of two parts, allowing the bridge to be:", options: ["Soldered together rigidly", "Removed by the patient for cleaning", "Supported at only one end", "Made entirely of ceramic"], correctIndex: 1 },
+    { id: 41, text: "What is the key difference between an Inlay and an Onlay Retainer?", options: ["Inlays are for anterior teeth, Onlays for posterior.", "Inlays use pins, Onlays do not.", "Onlays cover or protect the cusps, while Inlays do not.", "Onlays are temporary, while Inlays are permanent."], correctIndex: 2 },
+    { id: 42, text: "A bridge where the pontic is at the end of a slightly resilient curved arm is a:", options: ["Fixed-Supported Bridge", "Cantilever Bridge", "Removable Bridge", "Spring Cantilever Bridge"], correctIndex: 3 },
+    { id: 43, text: "Which of the following is NOT a classification of bridges based on the material used?", options: ["All ceramic FPD", "Cast metal FPD", "CAD CAM assisted FPD", "Resin veneered FPD"], correctIndex: 2 },
+    { id: 44, text: "One-half crown veneers restore the occlusal, mesial, and portions of the facial and lingual surfaces, leaving which surface intact?", options: ["Facial", "Lingual", "Mesial", "Distal"], correctIndex: 3 },
+    { id: 45, text: "According to the classification based on retention, which of the following is NOT a \"Simple bridge\"?", options: ["Cantilever bridge", "Fixed-supported bridge", "Compound bridge", "Spring Cantilever bridge"], correctIndex: 2 },
+    { id: 46, text: "What is a \"hybrid bridge\" according to the classification based on tooth reduction?", options: ["A bridge made of both metal and ceramic", "A bridge supported by both a tooth and an implant", "A bridge combining conventional and minimal preparation", "A bridge that is both fixed and removable"], correctIndex: 2 },
+    { id: 47, text: "Over-preparation and heat generation during abutment preparation can cause:", options: ["Improved retention", "Pulp irritation or exposure", "Better periodontal health", "Stronger connectors"], correctIndex: 1 },
+    { id: 48, text: "A \"Fixed-free bridge\" is another term for a:", options: ["Removable bridge", "Cantilever bridge", "Fixed-supported bridge", "Maryland bridge"], correctIndex: 1 },
+    { id: 49, text: "An implant-supported FPD can be classified as either screw-retained or:", options: ["Bonded-retained", "Pin-retained", "Cement-retained", "Clasp-retained"], correctIndex: 2 },
+    { id: 50, text: "What is the primary functional difference between a Fixed-Fixed bridge and a Fixed-Movable bridge?", options: ["A Fixed-Movable bridge can be removed by the patient.", "A Fixed-Movable bridge allows some individual movement of an abutment tooth.", "A Fixed-Fixed bridge is only used for anterior teeth.", "A Fixed-Fixed bridge has better esthetics."], correctIndex: 1 },
+    { id: 51, text: "A Pinledge Retainer is a modification specifically for which type of crown?", options: ["Posterior Three-Quarter Crown", "Anterior Three-Quarter Crown", "Full Metal Crown", "Post Crown"], correctIndex: 1 },
+    { id: 52, text: "The classification \"Compound bridge\" implies that it is:", options: ["A bridge crossing the midline of the arch", "A combination of two or more simple bridges", "A bridge made from multiple materials", "A bridge with more than three units"], correctIndex: 1 },
+    { id: 53, text: "A Proximal half crown is a modified form of a three-quarter crown where which surface is left intact?", options: ["The facial surface", "The mesial surface", "The distal surface", "The lingual surface"], correctIndex: 2 },
+    { id: 54, text: "The advantage of a fixed-supported bridge being separable before cementation allows for:", options: ["Easier fabrication in the lab", "A path of insertion that can accommodate non-parallel abutments", "The use of different cements for each retainer", "Stronger connectors"], correctIndex: 1 },
+    { id: 55, text: "Comparing a Veneered Metal Crown to a Full Veneered Metal Crown, the key difference is:", options: ["The type of metal used", "The number of surfaces covered by porcelain", "The retention mechanism", "The location in the mouth"], correctIndex: 1 },
+    { id: 56, text: "The text mentions that a Resin-Bonded bridge occupies \"more space than the original dentition.\" This is because:", options: ["The pontic is oversized for esthetics.", "The material is bonded to the surface rather than replacing reduced tooth structure.", "The connectors must be very thick for strength.", "It requires additional support from adjacent teeth."], correctIndex: 1 },
+    { id: 57, text: "The relationship between the anatomic crown and the clinical crown changes over a person's lifetime primarily due to:", options: ["Changes in tooth color", "Occlusal wear", "The position of the epithelial attachment and gingival margin", "The eruption of wisdom teeth"], correctIndex: 2 },
+    { id: 58, text: "Which of the following retainers provides the least amount of tooth coverage?", options: ["Full Metal Crown", "Three-Quarter Crown", "Onlay Retainer", "Laminate"], correctIndex: 3 },
+    { id: 59, text: "A \"Spring Cantilever Bridge\" would be most appropriate for replacing a tooth where:", options: ["The abutment tooth is directly adjacent to the space.", "There are abutments on both sides of the space.", "The edentulous space is remote from a suitable abutment.", "High occlusal forces are expected."], correctIndex: 2 },
+    { id: 60, text: "Based on the terminology, which retainer design would offer the most protection against cusp fracture on a posterior tooth?", options: ["Inlay Retainer", "Onlay Retainer", "Pinledge Retainer", "Laminate"], correctIndex: 1 },
+  ]
+};
+
+// --- Component from components/Confetti.tsx ---
+const ConfettiPiece = ({ id }) => {
+  const colors = ['bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-red-400', 'bg-purple-400', 'bg-pink-400'];
+  const [style, setStyle] = useState({});
+
+  useEffect(() => {
+    setStyle({
+      left: `${Math.random() * 100}%`,
+      backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+      animationDelay: `${Math.random() * 2}s`,
+      transform: `rotate(${Math.random() * 360}deg)`,
+    });
+  }, [id]);
+
+  return React.createElement('div', { className: `confetti ${style.backgroundColor}`, style: style });
+};
+
+const Confetti = ({ trigger }) => {
+  const [pieces, setPieces] = useState([]);
+
+  useEffect(() => {
+    if (trigger) {
+      setPieces(Array.from({ length: 50 }, (_, i) => i + Math.random()));
+      const timer = setTimeout(() => setPieces([]), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [trigger]);
+
+  if (!pieces.length) return null;
+
+  return (
+    React.createElement('div', { className: "absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-50" },
+      pieces.map((id) => React.createElement(ConfettiPiece, { key: id, id: id }))
+    )
+  );
+};
+
+// --- Component from components/Modal.tsx ---
+const Modal = ({ isOpen, onClose, children, title }) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" },
+      React.createElement('div', { className: "bg-slate-800 rounded-lg shadow-xl w-full max-w-md p-6 relative" },
+        React.createElement('h2', { className: "text-2xl font-bold mb-4 text-cyan-400" }, title),
+        children,
+        onClose && React.createElement('button', {
+          onClick: onClose,
+          className: "absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+        },
+          React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-6 w-6", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+            React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" })
+          )
+        )
+      )
+    )
+  );
+};
+
+// --- Component from components/Quiz.tsx ---
+const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const QuizScreen = ({ quiz, initialState, onStateChange, onFinish }) => {
+    const [state, setState] = useState(initialState);
+    const [selectedAnswer, setSelectedAnswer] = useState(null);
+    const [isCorrect, setIsCorrect] = useState(null);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [showPartialResults, setShowPartialResults] = useState(false);
+    const [confettiTrigger, setConfettiTrigger] = useState(false);
+    const [shakeTrigger, setShakeTrigger] = useState(false);
+
+    const currentQuestion = useMemo(() => quiz.questions[state.currentQuestionIndex], [quiz.questions, state.currentQuestionIndex]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setState(prevState => {
+                if (prevState.timeRemaining <= 1) {
+                    clearInterval(timer);
+                    onFinish(prevState);
+                    return { ...prevState, timeRemaining: 0 };
+                }
+                const newState = { ...prevState, timeRemaining: prevState.timeRemaining - 1 };
+                onStateChange(newState);
+                return newState;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [onFinish, onStateChange]);
+    
+    const handleAnswer = (answerIndex, questionId) => {
+        if (showFeedback) return;
+
+        const correct = answerIndex === currentQuestion.correctIndex;
+        setSelectedAnswer(answerIndex);
+        setIsCorrect(correct);
+        setShowFeedback(true);
+        
+        if (correct) {
+            setConfettiTrigger(Date.now());
+        } else {
+            setShakeTrigger(true);
+            setTimeout(() => setShakeTrigger(false), 500);
+        }
+
+        const newState = {
+            ...state,
+            answers: { ...state.answers, [questionId]: answerIndex },
+        };
+        setState(newState);
+        onStateChange(newState);
+    };
+
+    const handleNext = () => {
+        setShowFeedback(false);
+        setSelectedAnswer(null);
+        setIsCorrect(null);
+
+        const nextIndex = state.currentQuestionIndex + 1;
+
+        if ((nextIndex) % 10 === 0 && nextIndex > 0 && nextIndex < quiz.questions.length) {
+            setShowPartialResults(true);
+        }
+
+        if (nextIndex < quiz.questions.length) {
+            setState(prevState => ({ ...prevState, currentQuestionIndex: nextIndex }));
+        } else {
+            onFinish(state);
+        }
+    };
+
+    const calculatePartialScore = () => {
+        let score = 0;
+        const answeredQuestions = Object.keys(state.answers).length;
+        Object.entries(state.answers).forEach(([questionId, answerIndex]) => {
+            const question = quiz.questions.find(q => q.id === parseInt(questionId));
+            if (question && question.correctIndex === answerIndex) {
+                score++;
+            }
+        });
+        return { score, total: answeredQuestions };
+    };
+
+    return (
+        React.createElement('div', { className: "flex flex-col min-h-screen bg-slate-900 text-white p-4 sm:p-6 md:p-8 relative" },
+            React.createElement(Confetti, { trigger: !!confettiTrigger }),
+            React.createElement('header', { className: "w-full max-w-4xl mx-auto mb-6" },
+                React.createElement('div', { className: "flex justify-between items-center bg-slate-800 p-4 rounded-lg shadow-md" },
+                    React.createElement('h1', { className: "text-xl md:text-2xl font-bold text-cyan-400 truncate" }, quiz.title),
+                    React.createElement('div', { className: "bg-slate-700 text-lg font-mono px-4 py-2 rounded-md text-yellow-400" },
+                        formatTime(state.timeRemaining)
+                    )
+                )
+            ),
+            React.createElement('main', { className: "flex-grow flex flex-col items-center justify-center" },
+                React.createElement('div', { className: `w-full max-w-4xl bg-slate-800 p-6 md:p-8 rounded-lg shadow-2xl ${shakeTrigger ? 'animate-shake' : ''}` },
+                    React.createElement('p', { className: "text-sm text-slate-400 mb-2" },
+                        `Question ${state.currentQuestionIndex + 1} of ${quiz.questions.length}`
+                    ),
+                    React.createElement('h2', { className: "text-xl md:text-2xl font-semibold mb-6" }, currentQuestion.text),
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                        currentQuestion.options.map((option, index) => {
+                            let buttonClass = 'bg-slate-700 hover:bg-slate-600';
+                            if (showFeedback) {
+                                if (index === currentQuestion.correctIndex) {
+                                    buttonClass = 'bg-green-600';
+                                } else if (index === selectedAnswer) {
+                                    buttonClass = 'bg-red-600';
+                                } else {
+                                    buttonClass = 'bg-slate-700 opacity-50';
+                                }
+                            }
+                            return (
+                                React.createElement('button', {
+                                    key: index,
+                                    onClick: () => handleAnswer(index, currentQuestion.id),
+                                    disabled: showFeedback,
+                                    className: `w-full p-4 rounded-lg text-left text-lg transition-all duration-300 ${buttonClass} ${!showFeedback ? 'transform hover:scale-105' : ''}`
+                                }, option)
+                            );
+                        })
+                    ),
+                    showFeedback && (
+                         React.createElement('div', { className: "mt-6 text-center" },
+                            React.createElement('p', { className: `text-xl font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}` },
+                                isCorrect ? 'Correct!' : 'Incorrect!'
+                            ),
+                            React.createElement('button', {
+                                onClick: handleNext,
+                                className: "mt-4 bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-10 rounded-lg text-lg transition-transform transform hover:scale-105"
+                            }, state.currentQuestionIndex + 1 === quiz.questions.length ? 'Finish' : 'Next')
+                        )
+                    )
+                )
+            ),
+            React.createElement(Modal, {
+                isOpen: showPartialResults,
+                onClose: () => setShowPartialResults(false),
+                title: `Progress Report: Question ${state.currentQuestionIndex + 1}`
+            },
+                React.createElement('div', { className: "text-center" },
+                    React.createElement('p', { className: "text-slate-300 text-lg mb-4" }, "Here's how you're doing so far..."),
+                    React.createElement('div', { className: "my-6" },
+                        React.createElement('p', { className: "text-4xl font-bold text-white" }, `${calculatePartialScore().score} / ${calculatePartialScore().total}`),
+                        React.createElement('p', { className: "text-xl font-semibold text-cyan-400 mt-2" }, "Correct Answers")
+                    ),
+                    React.createElement('button', {
+                        onClick: () => setShowPartialResults(false),
+                        className: "w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg text-lg transition-transform transform hover:scale-105"
+                    }, "Continue")
+                )
+            )
+        )
+    );
+};
+
+
+// --- Component from App.tsx ---
+const App = () => {
+    const quiz = DENTISTRY_QUIZ;
+    const QUIZ_STATE_KEY = `quiz_state_${quiz.quizId}`;
+
+    const getInitialState = () => ({
+        currentQuestionIndex: 0,
+        answers: {},
+        timeRemaining: quiz.timeLimitSeconds,
+        quizCompleted: false,
+    });
+
+    const [quizState, setQuizState] = useState(null);
+    const [gameState, setGameState] = useState('welcome');
+    const [savedStateExists, setSavedStateExists] = useState(false);
+
+    useEffect(() => {
+        try {
+            const savedStateJSON = localStorage.getItem(QUIZ_STATE_KEY);
+            if (savedStateJSON) {
+                const savedState = JSON.parse(savedStateJSON);
+                if (!savedState.quizCompleted && savedState.currentQuestionIndex < quiz.questions.length) {
+                    setQuizState(savedState);
+                    setSavedStateExists(true);
+                } else {
+                     setQuizState(getInitialState());
+                     localStorage.removeItem(QUIZ_STATE_KEY);
+                }
+            } else {
+                 setQuizState(getInitialState());
+            }
+        } catch (error) {
+            console.error("Failed to load quiz state:", error);
+            setQuizState(getInitialState());
+        }
+    }, [QUIZ_STATE_KEY, quiz.questions.length]);
+    
+    const saveState = useCallback((state) => {
+        try {
+            localStorage.setItem(QUIZ_STATE_KEY, JSON.stringify(state));
+        } catch (error) {
+            console.error("Failed to save quiz state:", error);
+        }
+    }, [QUIZ_STATE_KEY]);
+
+    const handleStartNew = () => {
+        const initialState = getInitialState();
+        setQuizState(initialState);
+        saveState(initialState);
+        setGameState('playing');
+    };
+
+    const handleResume = () => {
+        setGameState('playing');
+    };
+    
+    const handleQuizFinish = (finalState) => {
+        const completedState = { ...finalState, quizCompleted: true };
+        setQuizState(completedState);
+        saveState(completedState);
+        setGameState('results');
+    };
+
+    const calculateScore = () => {
+        if (!quizState) return { score: 0, total: 0 };
+        let score = 0;
+        Object.entries(quizState.answers).forEach(([questionId, answerIndex]) => {
+            const question = quiz.questions.find(q => q.id === parseInt(questionId));
+            if (question && question.correctIndex === answerIndex) {
+                score++;
+            }
+        });
+        return { score, total: quiz.questions.length };
+    };
+
+    if (!quizState) {
+        return React.createElement('div', { className: "flex items-center justify-center h-screen bg-slate-900" }, React.createElement('div', { className: "text-xl" }, "Loading Quiz..."));
+    }
+
+    if (gameState === 'welcome') {
+        return (
+            React.createElement('div', { className: "flex flex-col items-center justify-center min-h-screen bg-slate-900 p-4 text-center" },
+                React.createElement('h1', { className: "text-4xl md:text-6xl font-bold text-cyan-400 mb-4" }, quiz.title),
+                React.createElement('p', { className: "text-lg md:text-xl text-slate-300 mb-8 max-w-2xl" },
+                    `Test your knowledge with ${quiz.questions.length} questions. Your progress is saved automatically.`
+                ),
+                React.createElement('div', { className: "flex flex-col sm:flex-row gap-4" },
+                    React.createElement('button', {
+                        onClick: handleStartNew,
+                        className: "bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
+                    }, savedStateExists ? "Start Over" : "Start Quiz"),
+                    savedStateExists && (
+                        React.createElement('button', {
+                            onClick: handleResume,
+                            className: "bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
+                        }, "Resume Quiz")
+                    )
+                )
+            )
+        );
+    }
+    
+    if (gameState === 'playing') {
+        return React.createElement(QuizScreen, { 
+                    quiz: quiz, 
+                    initialState: quizState, 
+                    onStateChange: saveState,
+                    onFinish: handleQuizFinish 
+                });
+    }
+
+    if (gameState === 'results') {
+        const { score, total } = calculateScore();
+        const percentage = total > 0 ? ((score / total) * 100).toFixed(1) : 0;
+
+        return (
+            React.createElement('div', { className: "flex items-center justify-center min-h-screen bg-slate-900 p-4" },
+                React.createElement(Modal, { isOpen: true, title: "Quiz Completed!" },
+                    React.createElement('div', { className: "text-center" },
+                        React.createElement('p', { className: "text-slate-300 text-xl mb-4" }, "You've completed the quiz!"),
+                        React.createElement('div', { className: "my-6" },
+                            React.createElement('p', { className: "text-5xl font-bold text-white" }, `${score} / ${total}`),
+                            React.createElement('p', { className: "text-2xl font-semibold text-cyan-400 mt-2" }, `${percentage}%`)
+                        ),
+                         React.createElement('button', {
+                            onClick: handleStartNew,
+                            className: "w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg text-lg transition-transform transform hover:scale-105"
+                        }, "Take Again")
+                    )
+                )
+            )
+        );
+    }
+    
+    return null;
+};
+
+
+// --- Entry point from index.tsx ---
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  React.createElement(React.StrictMode, null, React.createElement(App))
+);
+
+    </script>
+  </body>
+</html>

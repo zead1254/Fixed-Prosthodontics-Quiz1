@@ -1,0 +1,5 @@
+{
+  "name": "Prosthodontics Quiz",
+  "description": "A self-contained, offline-capable quiz application to test your knowledge of Fixed Prosthodontics. Your progress is saved automatically, allowing you to resume anytime.",
+  "requestFramePermissions": []
+}
